@@ -6,6 +6,16 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+#swp
+*.swp
+
+#config
+/config/
+config.json
+
+#uploads
+/uploads/
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
