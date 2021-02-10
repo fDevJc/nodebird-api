@@ -2,17 +2,18 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 
 const { verifyToken } = require('./middlewares');
-const { Domain, User } = require('../models');
+const { Domain, User, Post, Hashtag } = require('../models');
+const { hash } = require('bcrypt');
 
 const router = express.Router();
 
 router.post('/token', async (req, res) => {
-  const { clientSecret } = req.body;
+	const { clientSecret } = req.body;
   try {
     const domain = await Domain.findOne({
       where: { clientSecret },
       include: {
-        mode: User,
+        model: User,
         attribute: ['nick', 'id'],
       },
     });
@@ -49,6 +50,48 @@ router.post('/token', async (req, res) => {
 
 router.get('/test', verifyToken, (req, res) => {
   res.json(req.decoded);
+});
+
+router.get('/posts/my', verifyToken, async (req, res) => {
+  await Post.findAll({ where: { userId: req.decoded.id } })
+    .then((posts) => {
+      res.json({
+        code: 200,
+        payload: posts,
+      });
+    })
+    .catch((err) => {
+      console.error('v1 router post/my err : ', err);
+      return res.status(500).json({
+        code: 500,
+        message: '서버 에러',
+      });
+    });
+});
+
+router.get('/posts/hashtag/:title', verifyToken, async (req, res) => {
+  try {
+    const hashtag = await Hashtag.findOne({
+      where: { title: req.params.title },
+    });
+    if (!hashtag) {
+      return res.status(404).json({
+        code: 404,
+        message: '검색 결과가 없습니다',
+      });
+    }
+    const posts = await hashtag.getPosts();
+    return res.json({
+      code: 200,
+      payload: posts,
+    });
+  } catch (err) {
+    console.log('v1 router posts/hashtag/:title', err);
+    return res.status(500).json({
+      code: 500,
+      message: '서버 에러',
+    });
+  }
 });
 
 module.exports = router;
